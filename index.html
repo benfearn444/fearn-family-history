@@ -46,7 +46,7 @@ h1{font-size:clamp(2.4rem,5vw,5.4rem);line-height:.94;letter-spacing:-.05em;marg
 
 .node{cursor:pointer}.node rect{pointer-events:all}.node text{pointer-events:none}.node:focus rect{stroke:var(--green);stroke-width:3}.tree-stage{min-height:680px}.chips button.branch-selected{background:var(--green);color:#fff;border-color:var(--green)}.chips button.branch-dimmed{opacity:.65;background:#fff}.drawer.open{visibility:visible}.drawer{visibility:hidden}.drawer.open{visibility:visible}
 
-/* Version 2.14.5 widened Kenneth/Rita and Sydney/Lily spacing */
+/* Version 2.14.6 widened Kenneth/Rita and Sydney/Lily spacing */
 .topbar{
   grid-template-columns:1fr auto 1fr;
   background:#dfe8e2;
@@ -419,10 +419,10 @@ h1{font-size:clamp(2.4rem,5vw,5.4rem);line-height:.94;letter-spacing:-.05em;marg
 <section class="intro">
 <div><div class="eyebrow">Interactive family archive · Version 2.14.1</div><h1>The Fearn Family History</h1>
 <p>A living archive of the people, places, records and stories behind the family tree. Pan and zoom through relationships, open detailed profiles, and add photographs or original documents as the collection grows.</p></div>
-<div class="summary-grid"><div><strong>81</strong><span>people</span></div>
-<div><strong>55</strong><span>source notes</span></div>
-<div><strong>15</strong><span>research profiles</span></div>
-<div><strong>18</strong><span>media entries</span></div></div>
+<div class="summary-grid"><div><strong id="peopleCount">0</strong><span>people</span></div>
+<div><strong id="sourceCount">0</strong><span>source notes</span></div>
+<div><strong id="researchCount">0</strong><span>research profiles</span></div>
+<div><strong id="mediaCount">0</strong><span>media entries</span></div></div>
 </section>
 <section class="view active" id="treeView">
 <div class="tree-toolbar panel-card">
@@ -1722,6 +1722,26 @@ let selectedBranch=null, activeConfidence="all", map=null;
 let t={x:0,y:0,scale:1};
 let pointer={down:false,moved:false,startX:0,startY:0,lastX:0,lastY:0,target:null};
 
+function updateDashboardCounts(){
+  const uniqueSources=new Set();
+  for(const person of people){
+    for(const source of (person.sources||[])){
+      if(typeof source==='string'&&source.trim())uniqueSources.add(source.trim());
+    }
+  }
+  const counts={
+    people:people.length,
+    sources:uniqueSources.size,
+    research:document.querySelectorAll('.person-research-card').length,
+    media:Object.keys(D.mediaLibrary||{}).length
+  };
+  const targets={people:'#peopleCount',sources:'#sourceCount',research:'#researchCount',media:'#mediaCount'};
+  for(const [key,selector] of Object.entries(targets)){
+    const element=$(selector);
+    if(element)element.textContent=String(counts[key]);
+  }
+}
+
 const NODE_W=220, NODE_H=96;
 const FULL_W=2300, FULL_H=1510;
 
@@ -2091,11 +2111,12 @@ function initMap(){
  D.locations.forEach(l=>{const p=coords[l.name];if(p)L.marker(p).addTo(map).bindPopup(`<b>${l.name}</b><br>${l.note}`)});
 }
 
+updateDashboardCounts();
 ensurePeopleCards();
 rebuildTree();
 requestAnimationFrame(fit);
 
-/* Version 2.14.1 research dashboard interactions */
+/* Version 2.14.6 dynamic dashboard and research interactions */
 document.querySelectorAll('.research-group-head').forEach(head=>{
   head.addEventListener('click',()=>{
     const group=head.closest('.research-family-group');
