@@ -414,7 +414,7 @@ h1{font-size:clamp(2.4rem,5vw,5.4rem);line-height:.94;letter-spacing:-.05em;marg
 .home-intro{grid-template-columns:.75fr 1.25fr;align-items:stretch}.archive-welcome{display:flex;flex-direction:column;justify-content:center}.home-intro h1{font-size:clamp(2.2rem,3.4vw,3.6rem);line-height:1;letter-spacing:-.045em;margin:.45rem 0 1rem;max-width:15ch}.welcome-note{margin-top:18px;color:var(--green);font-weight:750;font-size:.9rem}
 .home-data{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px;box-shadow:var(--shadow)}.home-data .summary-grid div{padding:15px}.home-insights{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}.insight-card{border:1px solid #e3ded3;border-radius:15px;background:#fbfaf7;padding:15px;min-height:138px}.insight-kicker{font-size:.72rem;text-transform:uppercase;letter-spacing:.11em;font-weight:850;color:var(--gold);margin-bottom:12px}
 .chart-list{display:grid;gap:8px}.chart-row{display:grid;grid-template-columns:84px 1fr 18px;gap:7px;align-items:center;font-size:.82rem}.chart-row span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.chart-track{height:8px;background:#eeeae1;border-radius:999px;overflow:hidden}.chart-fill{height:100%;background:linear-gradient(90deg,#315f53,#6d9f8d);border-radius:inherit}.chart-row b{font-size:.8rem;color:var(--muted)}
-.occupation-layout{display:grid;grid-template-columns:100px 1fr;gap:14px;align-items:center}.occupation-donut{width:92px;height:92px;border-radius:50%;background:#eeeae1;position:relative}.occupation-donut:after{content:'';position:absolute;inset:18px;background:#fbfaf7;border-radius:50%;box-shadow:inset 0 0 0 1px #eeeae1}.occupation-legend{display:grid;gap:6px}.legend-row{display:grid;grid-template-columns:9px 1fr auto;gap:6px;align-items:center;font-size:.79rem}.legend-dot{width:9px;height:9px;border-radius:50%}.legend-row span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.legend-row b{color:var(--muted);font-size:.78rem}
+.occupation-layout{display:grid;grid-template-columns:100px 1fr;gap:14px;align-items:center}.occupation-donut{width:92px;height:92px;border-radius:50%;background:#eeeae1;position:relative}.occupation-donut:after{content:'';position:absolute;inset:18px;background:#fbfaf7;border-radius:50%;box-shadow:inset 0 0 0 1px #eeeae1}.occupation-legend{display:grid;gap:6px}.legend-row{display:grid;grid-template-columns:9px 1fr auto;gap:6px;align-items:center;font-size:.79rem}.legend-dot{width:9px;height:9px;border-radius:50%}.legend-row span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.legend-row b{color:var(--muted);font-size:.78rem}.insight-note{margin:10px 0 0;color:var(--muted);font-size:.68rem;line-height:1.35}
 @media(max-width:980px){.topbar{grid-template-columns:1fr}.brand-link{justify-self:start}.home-intro,.home-insights{grid-template-columns:1fr}.home-intro h1{max-width:22ch}}
 </style><style>
 .brand-link{font-size:2.25rem!important;line-height:1!important;font-weight:850!important;letter-spacing:-.035em!important}
@@ -444,7 +444,7 @@ h1{font-size:clamp(2.4rem,5vw,5.4rem);line-height:.94;letter-spacing:-.05em;marg
 </header>
 <main>
 <section class="intro home-intro">
-  <div class="archive-welcome"><div class="eyebrow">Family archive · Version 2.15.77</div><h1>Every record adds to the story.</h1>
+  <div class="archive-welcome"><div class="eyebrow">Family archive · Version 2.15.79</div><h1>Every record adds to the story.</h1>
   <p>A living archive of people, places and evidence. Explore the connected family tree, then follow the records that support each part of it.</p>
   <div class="welcome-note">The archive figures and visual summaries update as new records are added.</div></div>
   <div class="home-data">
@@ -454,7 +454,7 @@ h1{font-size:clamp(2.4rem,5vw,5.4rem);line-height:.94;letter-spacing:-.05em;marg
     <div><strong id="mediaCount">0</strong><span>media entries</span></div></div>
     <div class="home-insights">
       <section class="insight-card"><div class="insight-kicker">Most recurring first names</div><div class="chart-list" id="firstNameInsight"></div></section>
-      <section class="insight-card"><div class="insight-kicker">Work recorded in the evidence</div><div class="occupation-layout"><div class="occupation-donut" id="occupationDonut" aria-hidden="true"></div><div class="occupation-legend" id="occupationInsight"></div></div></section>
+      <section class="insight-card"><div class="insight-kicker">Work represented in the evidence</div><div class="occupation-layout"><div class="occupation-donut" id="occupationDonut" aria-hidden="true"></div><div class="occupation-legend" id="occupationInsight"></div></div></section>
     </div>
   </div>
 </section>
@@ -2363,22 +2363,27 @@ window.addEventListener('load',()=>{
   if(namesTarget)namesTarget.innerHTML=nameRanked.map(([name,count])=>`<div class="chart-row"><span>${escapeHtml(name)}</span><div class="chart-track"><div class="chart-fill" style="width:${Math.round(count/nameMax*100)}%"></div></div><b>${count}</b></div>`).join('')||'<span class="helper">No names recorded yet.</span>';
 
   const classify=value=>{
-    const text=String(value||'').toLowerCase();
-    if(/coal|collier|miner|hewer|drawer|onsetter/.test(text))return 'Mining';
-    if(/labourer|labour/.test(text))return 'Labouring';
-    if(/baker|bread/.test(text))return 'Baking';
-    if(/domestic|home duties|house duties/.test(text))return 'Domestic work';
-    if(/tailor|tailoress|shoe|blouse/.test(text))return 'Clothing trades';
-    if(/smith|moulder|foundry|metal/.test(text))return 'Metalwork';
-    return '';
+    const text=String(value||'').toLowerCase().replace(/[’']/g,"'");
+    if(!text||/^(?:-|none|scholar|school|at school)$/.test(text.trim()))return '';
+    if(/coal|collier|miner|hewer|drawer|onsetter|mine haulage/.test(text))return 'Mining';
+    if(/farmer|farming|agricultur|farm labour|farm servant/.test(text))return 'Farming & agriculture';
+    if(/labourer|labour|scavenger/.test(text))return 'Labouring';
+    if(/tailor|tailoress|dress ?maker|underwear|blouse|clothing|cotton|spinner|spinning|winder|presser|shoe[- ](?:sole )?maker|seamstress|printer|lamptress/.test(text))return 'Clothing & textiles';
+    if(/baker|bread|butcher|food|dairyman|dairy/.test(text))return 'Food trades';
+    if(/smith|moulder|foundry|metal|iron|engine worker|engineer|carpenter|joiner|painter|rubber mixer|electrical|electrician|slater|emery|bootmaker/.test(text))return 'Manufacturing & skilled trades';
+    if(/domestic|home duties|house duties|housewife|housekeeper|servant|nurse/.test(text))return 'Domestic work';
+    if(/railway|carter|crane driver|locomotive|postman|porter|shop|publisher|clerk|coachman/.test(text))return 'Transport, retail & public service';
+    return 'Other recorded work';
   };
   const roles=new Map();
   for(const person of records){
     const values=[...(person.facts||[]).filter(f=>/occupation/i.test(f?.[0])).map(f=>f?.[1]),...(person.events||[]).filter(e=>e&&e.type==='occupation').map(e=>e.detail||e.label)];
-    for(const value of values){const role=classify(value);if(role)roles.set(role,(roles.get(role)||0)+1);}
+    const personGroups=new Set(values.map(classify).filter(Boolean));
+    for(const role of personGroups)roles.set(role,(roles.get(role)||0)+1);
   }
-  const palette=['#315f53','#b17b45','#ab6475','#6d83a8','#8b7a5a','#789b8d'];
-  const ranked=[...roles.entries()].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0])).slice(0,5); const total=ranked.reduce((sum,[,count])=>sum+count,0);
+  const palette=['#315f53','#b17b45','#6f8d55','#6d83a8','#ab6475','#8b7a5a','#789b8d','#8f6f91','#6f747a'];
+  const preferredOrder=['Mining','Labouring','Farming & agriculture','Manufacturing & skilled trades','Clothing & textiles','Food trades','Domestic work','Transport, retail & public service','Other recorded work'];
+  const ranked=preferredOrder.filter(role=>roles.has(role)).map(role=>[role,roles.get(role)]); const total=ranked.reduce((sum,[,count])=>sum+count,0);
   const donut=document.getElementById('occupationDonut'); const legend=document.getElementById('occupationInsight');
   if(total){let cursor=0;const segments=ranked.map(([,count],i)=>{const start=cursor/total*360;cursor+=count;return `${palette[i]} ${start}deg ${cursor/total*360}deg`;});if(donut)donut.style.background=`conic-gradient(${segments.join(',')})`;if(legend)legend.innerHTML=ranked.map(([role,count],i)=>`<div class="legend-row"><i class="legend-dot" style="background:${palette[i]}"></i><span>${escapeHtml(role)}</span><b>${count}</b></div>`).join('');}
   else {if(donut)donut.style.background='#eeeae1';if(legend)legend.innerHTML='<span class="helper">Occupation evidence will appear here as it is added.</span>';}
@@ -2403,5 +2408,4 @@ window.addEventListener('load',()=>{
   document.getElementById('homeBrand')?.addEventListener('click',()=>document.querySelector('[data-view="treeView"]')?.click());
 });
 </script></body></html>
-
 
