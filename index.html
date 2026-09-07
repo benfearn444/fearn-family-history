@@ -406,7 +406,7 @@ h1{font-size:clamp(2.4rem,5vw,5.4rem);line-height:.94;letter-spacing:-.05em;marg
 .map-filter{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 12px;font-weight:750;color:var(--ink)}
 .map-filter.active{border-color:var(--green);background:var(--green2)}
 .map-key{width:10px;height:10px;border-radius:50%;display:inline-block}.map-key.birth{background:#3d7f6a}.map-key.marriage{background:#a75f73}.map-key.residence{background:#aa7440}
-.map-helper{margin:11px 0 0;color:var(--muted);font-size:.92rem}.event-map-pin{width:18px;height:18px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2px solid #fff;box-shadow:0 1px 5px rgba(0,0,0,.35)}.event-map-pin.birth{background:#3d7f6a}.event-map-pin.marriage{background:#a75f73}.event-map-pin.residence{background:#aa7440}
+.map-helper{margin:11px 0 0;color:var(--muted);font-size:.92rem}.map-worldwide-control{margin:10px;border:0;border-radius:8px;padding:8px 10px;background:#fff;color:var(--ink);box-shadow:0 1px 5px rgba(0,0,0,.28);font:700 .82rem/1.1 system-ui,sans-serif;cursor:pointer}.map-worldwide-control:hover{background:var(--green2)}.event-map-pin{width:18px;height:18px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2px solid #fff;box-shadow:0 1px 5px rgba(0,0,0,.35)}.event-map-pin.birth{background:#3d7f6a}.event-map-pin.marriage{background:#a75f73}.event-map-pin.residence{background:#aa7440}
 .open-profile-btn{display:none!important}.group-count{width:34px;height:34px;padding:0;display:grid;place-items:center;border-radius:50%;font-size:1.3rem;line-height:1;color:var(--green)}</style>
 <style>
 .topbar{grid-template-columns:minmax(190px,1fr) auto minmax(220px,330px)}
@@ -444,7 +444,7 @@ h1{font-size:clamp(2.4rem,5vw,5.4rem);line-height:.94;letter-spacing:-.05em;marg
 </header>
 <main>
 <section class="intro home-intro">
-  <div class="archive-welcome"><div class="eyebrow">Family archive · Version 3.6.0</div><h1>Every record adds to the story.</h1>
+  <div class="archive-welcome"><div class="eyebrow">Family archive · Version 3.6.1</div><h1>Every record adds to the story.</h1>
   <p>A living archive of people, places and evidence. Explore the connected family tree, then follow the records that support each part of it.</p>
   <div class="welcome-note">The archive figures and visual summaries update as new records are added.</div></div>
   <div class="home-data">
@@ -1361,7 +1361,7 @@ h1{font-size:clamp(2.4rem,5vw,5.4rem);line-height:.94;letter-spacing:-.05em;marg
 <button class="map-filter active" data-map-filter="residence" aria-pressed="true"><span class="map-key residence"></span>Residences</button>
 </div>
 <div class="map-canvas panel-card" id="mapCanvas"><div class="map-fallback">Loading interactive map…</div></div>
-<p class="map-helper">Pins are grouped by place and event type to keep the map readable. Select a pin to see the people and records represented there.</p>
+<p class="map-helper">Pins are grouped by place and event type to keep the map readable. Only people on the main canvas are represented. Select a pin to see the people and records represented there; use “Show worldwide places” to include Tasmania and other overseas evidence.</p>
 <p class="helper">The map uses OpenStreetMap and needs an internet connection. The rest of the archive works locally.</p>
 </section>
 <section class="view" id="researchView">
@@ -2647,8 +2647,11 @@ function initMap(){
  if(!window.L){c.innerHTML="<div class='map-fallback'>The map library could not load. The tree, profiles and timeline still work offline.</div>";return}
  c.innerHTML='';map=L.map('mapCanvas').setView([53.7,-2.8],6);
  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap contributors'}).addTo(map);
- const coords={'Manchester':[53.4808,-2.2426],'Buxton':[53.259,-1.914],'Newton-in-Makerfield':[53.45,-2.63],'Carlisle':[54.892,-2.933],'Workington':[54.643,-3.548],'Termon, County Mayo':[54.15,-10.0],'Tasmania':[-42,147],'Quebec':[46.8139,-71.208], 'County Mayo, Ireland':[53.9,-9.3]};
- D.locations.forEach(l=>{const p=coords[l.name];if(p)L.marker(p).addTo(map).bindPopup(`<b>${l.name}</b><br>${l.note}`)});
+ const coords={'Manchester':[53.4808,-2.2426],'Buxton':[53.259,-1.914],'Newton-in-Makerfield':[53.45,-2.63],'Carlisle':[54.892,-2.933],'Workington':[54.643,-3.548],'Termon, County Mayo':[54.15,-10.0],'Tasmania':[-42,147],'Haydock / Ashton-in-Makerfield':[53.466,-2.664],'Prescot / St Helens':[53.428,-2.8],'Winwick':[53.43,-2.596],'Quebec':[46.8139,-71.208], 'County Mayo, Ireland':[53.9,-9.3]};
+ const mainCanvasIds=new Set(Object.keys(tidy));
+ const mapPoints=[];
+ D.locations.filter(l=>(l.linkedPeople||[]).some(id=>mainCanvasIds.has(id))).forEach(l=>{const p=coords[l.name];if(!p)return;L.marker(p).addTo(map).bindPopup(`<b>${l.name}</b><br>${l.note}`);mapPoints.push(p);});
+ if(mapPoints.some(p=>p[0]<0||Math.abs(p[1])>30)){const worldwide=L.control({position:'topright'});worldwide.onAdd=()=>{const button=L.DomUtil.create('button','map-worldwide-control');button.type='button';button.textContent='Show worldwide places';button.setAttribute('aria-label','Show all main-line places, including Tasmania');L.DomEvent.disableClickPropagation(button);L.DomEvent.on(button,'click',()=>map.fitBounds(mapPoints,{padding:[36,36],maxZoom:5}));return button;};worldwide.addTo(map);}
 }
 
 updateDashboardCounts();
@@ -2709,13 +2712,13 @@ document.querySelectorAll('.open-profile-btn').forEach(btn=>{
  function addEventMarkers(){
   if(!liveMap||Object.keys(eventLayers).length)return;
   const groups={};
-  for(const person of D.people){for(const event of person.events||[]){const type=String(event.type||'').toLowerCase();if(type!=='birth'&&type!=='marriage'&&type!=='residence')continue;const place=placeFor(`${event.label||''} ${event.detail||''} ${type==='birth'?(person.birth||''):''}`);if(!place)continue;const key=type+'|'+place;if(!groups[key])groups[key]={type,place,items:[]};groups[key].items.push({name:person.name,label:event.label||type});}}
+  const mainCanvasIds=new Set(Object.keys(tidy));
+  for(const person of D.people){if(!mainCanvasIds.has(person.id))continue;for(const event of person.events||[]){const type=String(event.type||'').toLowerCase();if(type!=='birth'&&type!=='marriage'&&type!=='residence')continue;const place=placeFor(`${event.label||''} ${event.detail||''} ${type==='birth'?(person.birth||''):''}`);if(!place)continue;const key=type+'|'+place;if(!groups[key])groups[key]={type,place,items:[]};groups[key].items.push({name:person.name,label:event.label||type});}}
   const offsets={birth:[-.012,-.012],marriage:[0,.014],residence:[.012,0]};
   for(const group of Object.values(groups)){const base=places[group.place],offset=offsets[group.type],point=[base[0]+offset[0],base[1]+offset[1]];const icon=L.divIcon({className:'',html:`<div class="event-map-pin ${group.type}"></div>`,iconSize:[18,18],iconAnchor:[9,18]});const records=group.items.slice(0,12).map(item=>`<li><b>${safe(item.name)}</b> — ${safe(item.label)}</li>`).join('');const extra=group.items.length>12?`<p>Plus ${group.items.length-12} further record(s).</p>`:'';const marker=L.marker(point,{icon}).bindPopup(`<b>${group.type[0].toUpperCase()+group.type.slice(1)} records — ${safe(group.place)}</b><ul>${records}</ul>${extra}`);if(!eventLayers[group.type])eventLayers[group.type]=L.layerGroup();eventLayers[group.type].addLayer(marker);}
   Object.keys(eventLayers).forEach(type=>{if(active[type])eventLayers[type].addTo(liveMap);});
  }
  L.map=function(container,options){const created=baseMapFactory.call(L,container,options);if(container==='mapCanvas'||container===document.getElementById('mapCanvas')){liveMap=created;L.map=baseMapFactory;setTimeout(addEventMarkers,0);}return created;};
- D.locations=[];
  document.querySelectorAll('[data-map-filter]').forEach(button=>button.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();const type=button.dataset.mapFilter;active[type]=!active[type];button.classList.toggle('active',active[type]);button.setAttribute('aria-pressed',String(active[type]));addEventMarkers();if(liveMap&&eventLayers[type]){if(active[type])eventLayers[type].addTo(liveMap);else liveMap.removeLayer(eventLayers[type]);}}));
  const mapNav=document.querySelector('[data-view="mapView"]');if(mapNav)mapNav.addEventListener('click',()=>setTimeout(addEventMarkers,25));
 })();
@@ -2806,7 +2809,7 @@ window.addEventListener('load',()=>{
   document.getElementById('homeBrand')?.addEventListener('click',()=>document.querySelector('[data-view="treeView"]')?.click());
 });
 </script><script>
-/* Version 3.6.0: the overview intentionally follows the main canvas lineage only. */
+/* Version 3.6.1: the overview intentionally follows the main canvas lineage only. */
 (function(){
   const D=window.FAMILY_DATA;if(!D)return;
   const canvasIds=new Set(Object.keys((D.treeLayout&&D.treeLayout.nodes)||{}));
@@ -2821,6 +2824,8 @@ window.addEventListener('load',()=>{
 </script></body></html>
 
 
-<!-- Version 3.6.0: Joseph Stagg recorded as a Private in the 63rd Regiment, supported by the 1831 Hobart Town baptism register. -->
+<!-- Version 3.6.1: Joseph Stagg recorded as a Private in the 63rd Regiment, supported by the 1831 Hobart Town baptism register. -->
 
-<!-- Version 3.6.0: Stagg military and Hobart evidence, confirmed sibling profiles, and Heatley 1911 family reconciliation. -->
+<!-- Version 3.6.1: Stagg military and Hobart evidence, confirmed sibling profiles, and Heatley 1911 family reconciliation. -->
+
+<!-- Version 3.6.1: restored curated main-line map locations, added a worldwide focus control, and excluded off-canvas profiles from map events. -->
